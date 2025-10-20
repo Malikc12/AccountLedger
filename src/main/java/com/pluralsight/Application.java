@@ -1,0 +1,390 @@
+package com.pluralsight;
+
+import java.io.*;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Scanner;
+import java.util.regex.Pattern;
+
+public class Application {
+    private static final Scanner scanner = new Scanner(System.in);
+    static ArrayList<Transaction> transactions = readTransactions(); //empty basket
+
+    public static void main(String[] args) {
+
+        runMainMenu();
+        scanner.close();
+    }
+
+    // Main menu loop
+    public static void runMainMenu() {
+        boolean running = true;
+
+        while (running) {
+            displayMenu();
+            System.out.print("Choose an option: ");
+            String choice = scanner.nextLine().trim().toUpperCase(); // normalize input
+
+            switch (choice) {
+                case "D":
+                    addDeposit();
+                    break;
+                case "MP":
+                    makePayment();
+                    break;
+                case "LS":
+                    runLedger();
+                    break;
+                case"X":
+                    System.out.println("Exiting.... Goodbye!");
+                    running = false;
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+
+            System.out.println(); // blank line for spacing
+
+        }
+    }
+
+    // Display menu
+    public static void displayMenu() {
+        System.out.println("""
+                ======= Main Menu =======
+                (D) Add Deposit
+                (MP) Make Payment (Debit)
+                (LS) Display Ledger Screen
+                (X) Exit""");
+    }
+
+    public static void addDeposit(){
+
+        try {
+            System.out.print("Add deposit amount: ");
+
+            // create a FileWriter and BufferedREader
+            FileWriter fileWriter = new FileWriter("transactions.csv", true);
+
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+
+            double userDepositAmount;
+            Transaction transaction;
+            try {
+                userDepositAmount = scanner.nextDouble();
+                scanner.nextLine();
+                System.out.print("Enter description ");
+                String userDescription = scanner.nextLine();
+                System.out.print("Enter vendor ");
+                String userToVendor = scanner.nextLine();
+                transaction = new Transaction(LocalDate.now(),
+                        LocalTime.now(),
+                        userDescription,
+                        userToVendor,
+                        userDepositAmount
+                );
+                System.out.println("\nDeposit made. Thank you!");
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            bufferedWriter.write("\n" + transaction.toCsv());
+            bufferedWriter.flush();
+            bufferedWriter.close();
+            transactions.add(transaction);
+        } catch (IOException e) {
+            System.out.println("ERROR: An unexpected error occurred");
+            e.getStackTrace();
+        }
+    }
+
+    private static void makePayment() {
+
+        try {
+            System.out.print("Add payment amount: ");
+
+            // create a FileWriter
+            FileWriter fileWriter = new FileWriter("transactions.csv", true);
+
+            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
+
+            double userPaymentAmount;
+            Transaction transaction;
+            try {
+                userPaymentAmount = scanner.nextDouble();
+                scanner.nextLine();
+                System.out.print("Enter description ");
+                String userDescription = scanner.nextLine();
+                System.out.print("Enter vendor ");
+                String userToVendor = scanner.nextLine();
+                transaction = new Transaction(LocalDate.now(),
+                        LocalTime.now(),
+                        userDescription,
+                        userToVendor,
+                        -userPaymentAmount
+                );
+                System.out.println("\nPayment received. Thank you!");
+
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            bufferedWriter.write("\n" + transaction.toCsv());
+            bufferedWriter.flush();
+            bufferedWriter.close();
+            transactions.add(transaction);
+        } catch (IOException e) {
+            System.out.println("ERROR: An unexpected error occurred");
+            e.getStackTrace();
+        }
+    }
+
+    // Ledger loop
+    public static void runLedger() {
+        boolean running = true;
+
+        while (running) {
+            displayLedger();
+            System.out.print("Choose an option: ");
+            String choice = scanner.nextLine().trim().toUpperCase(); // normalize input
+
+            switch (choice) {
+                case "A":
+                    displayAllEntries();
+                    break;
+                case "D":
+                    displayDeposits();
+                    break;
+                case "P":
+                    displayPayments();
+                    break;
+                case "R":
+                    runReports();
+                    break;
+                case "H":
+                    System.out.println("Returning to Home Screen....");
+                    running = false;
+
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+
+            System.out.println(); // blank line for spacing
+        }
+    }
+
+    public static void displayLedger() {
+        System.out.println("""
+                ========= Ledger =========
+                (A) Display All Entries
+                (D) Display deposits
+                (P) Display payments
+                (R) Reports
+                (H) Home Page""");
+    }
+
+    // Menu actions
+    // Display All Entries
+    public static void displayAllEntries() {
+
+        for (Transaction transaction : transactions) {
+            System.out.println(transaction);
+
+        }
+    }
+    // Display Deposits
+    public static void displayDeposits() {
+        System.out.println(transactions);
+
+        for (Transaction transaction : transactions) {
+            if (transaction.getAmount() >= 0) {
+                System.out.println(transaction);
+
+            }
+
+        }
+    }
+    // Display Payments
+    public static void displayPayments() {
+
+        for (Transaction transaction : transactions) {
+            if (transaction.getAmount() < 0) {
+                System.out.println(transaction);
+
+            }
+        }
+    }
+    // Open Reports Menu
+    public static void runReports() {
+        boolean running = true;
+
+        while (running) {
+            displayReports();
+            System.out.print("Choose an option: ");
+            String choice = scanner.nextLine().trim().toUpperCase();
+
+            switch (choice) {
+                case "1":
+                    displayMonthToDate();
+                    break;
+                case "2":
+                    displayPreviousMonth();
+                    break;
+                case"3":
+                    displayYearToDate();
+                    break;
+                case"4":
+                    displayPreviousYear();
+                    break;
+                case"5":
+                    displayByVendor();
+                    break;
+                case"6":
+                    System.out.println("Returning to Ledger Screen....");
+                    runLedger();
+                case "7":
+                    System.out.println("Exiting to Home Screen..... ");
+                    running = false;
+                    runMainMenu();
+                    break;
+                default:
+                    System.out.println("Invalid choice. Please try again.");
+            }
+
+            System.out.println(); // blank line for spacing
+        }
+    }
+    public static void displayReports() {
+        System.out.println("""
+                ============== Reports ==============
+                (1) Display by Month to Date
+                (2) Display Previous Month
+                (3) Display Year to Date
+                (4) Display Previous Year
+                (5) Display by Vendor
+                (0) Return to Ledger
+                (H) Exit to Home Screen""");
+
+    }
+    // Report options
+    public static void displayMonthToDate(){
+
+        LocalDate currentDate = LocalDate.now();
+        LocalDate startDate = currentDate.withDayOfMonth(1);
+
+        for (Transaction transaction : transactions){
+            if (transaction.getTransactionDate().isAfter(startDate)){
+                System.out.println(transaction);
+            }
+        }
+        System.out.println("===========================================");
+    }
+    public static void displayPreviousMonth(){
+
+        LocalDate lastMonth = LocalDate.now().minusMonths(1);
+        int previousMonth = lastMonth.getMonthValue();
+        int currentYear = lastMonth.getYear();
+
+        for (Transaction transaction : transactions){
+            if (transaction.getTransactionDate().getMonthValue() == previousMonth && transaction.getTransactionDate().getYear() == currentYear){
+                System.out.println(transaction);
+            }
+        }
+        System.out.println("===========================================");
+    }
+    public static void displayYearToDate(){
+
+        int currentYear = LocalDate.now().getYear();
+
+        for (Transaction transaction : transactions){
+            if (transaction.getTransactionDate().getYear() == currentYear) {
+                System.out.println(transaction);
+            }
+        }
+        System.out.println("===========================================");
+    }
+    public static void displayPreviousYear(){
+
+        LocalDate  currentYear = LocalDate.now();
+        LocalDate oneYearAgo = currentYear.minusYears(1);
+        int previousYear = oneYearAgo.getYear();
+
+        for (Transaction transaction : transactions){
+            if (transaction.getTransactionDate().getYear() == previousYear){
+                System.out.println(transaction);
+            }
+        }
+        System.out.println("===========================================");
+    }
+    public static void displayByVendor(){
+
+        System.out.println("Enter vendor name: ");
+        String searchVendor = scanner.nextLine().trim();
+
+        boolean found = false;
+
+        for (Transaction transaction : transactions) {
+            if (transaction.getVendor().equalsIgnoreCase(searchVendor)) {
+                System.out.println(transaction);
+                found = true;
+            }
+        }
+        if (!found) {
+            System.out.println("Vendor not found. Please try again. ");
+        }
+    }
+
+
+    private static ArrayList<Transaction> readTransactions() {
+        ArrayList<Transaction> transactions = new ArrayList<>();
+
+        try {
+
+            FileReader fileReader = new FileReader("transactions.csv");
+
+            BufferedReader bufferedReader = new BufferedReader(fileReader);
+            String line;
+
+            bufferedReader.readLine();
+
+            while ((line = bufferedReader.readLine()) != null) {
+
+                String[] parts = line.split(Pattern.quote("|"));
+
+                if(parts.length != 5) continue;
+
+                Transaction transaction = new Transaction();
+
+                String transactionDateAsString = parts[0];
+                DateTimeFormatter formatter1 = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                LocalDate transactionDate = LocalDate.parse(transactionDateAsString, formatter1);
+                transaction.setTransactionDate(transactionDate);
+
+                String transactionTimeAsString = parts[1];
+                DateTimeFormatter formatter2 = DateTimeFormatter.ofPattern("HH:mm:ss");
+                LocalTime transactionTime = LocalTime.parse(transactionTimeAsString, formatter2);
+                transaction.setTransactionTime(transactionTime);
+
+                String description = parts[2];
+                transaction.setDescription(description);
+
+                String vendor = parts[3];
+                transaction.setVendor(vendor);
+
+                String amountAsString = parts[4];
+                double amount = Double.parseDouble(amountAsString);
+                transaction.setAmount(amount);
+                transactions.add(transaction); //adds transactions to basket
+
+            }
+            bufferedReader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return transactions;
+
+    }
+}
