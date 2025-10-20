@@ -75,13 +75,13 @@ public class Application {
             try {
                 userDepositAmount = scanner.nextDouble();
                 scanner.nextLine();
-                System.out.print("Enter description ");
-                String userDescription = scanner.nextLine();
+                System.out.print("Enter payment type ");
+                String userpaymentType = scanner.nextLine();
                 System.out.print("Enter vendor ");
                 String userToVendor = scanner.nextLine();
                 transaction = new Transaction(LocalDate.now(),
                         LocalTime.now(),
-                        userDescription,
+                        userpaymentType,
                         userToVendor,
                         userDepositAmount
                 );
@@ -151,7 +151,7 @@ public class Application {
             String choice = scanner.nextLine().trim().toUpperCase(); // normalize input
 
             switch (choice) {
-                case "A":
+                case "AE":
                     displayAllEntries();
                     break;
                 case "D":
